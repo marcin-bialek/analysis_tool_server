@@ -1,22 +1,32 @@
 const http = require('http')
-const nosql = require('nosql')
+const mongo = require('mongodb')
 const socketio = require('socket.io')
 
 
 class AnalysisToolServer {
     constructor() {
-        this.DATABASE_FILE = process.env['DATABASE_FILE'] || 'data.nosql'
+        this.DATABASE_URL = process.env['DATABASE_URL'] || 'mongodb://127.0.0.1:27017/'
         this.SERVER_PORT = process.env['SERVER_PORT'] || 8080
     }
 
-    start() {
-        this.database = nosql.load(this.DATABASE_FILE)
+    async start() {
+        await this._setupDatabase()
         this.httpServer = new http.createServer()
         this.ioServer = socketio(this.httpServer)
         this.ioServer.on('connection', this._handleConnection.bind(this))
         this.httpServer.listen(this.SERVER_PORT, () => {
             console.log(`Listening on port ${this.SERVER_PORT}...`)
         })
+    }
+
+    async _setupDatabase() {
+        this.databaseClient = await mongo.MongoClient.connect(this.DATABASE_URL)
+        this.database = this.databaseClient.db('atool')
+        const collections = await this.database.collections()
+        if(!collections.some(c => c.collectionName == 'projects')) {
+            await this.database.createCollection('projects')
+        }
+        this.projects = this.database.collection('projects')
     }
 
     _handleConnection(client) {
@@ -76,16 +86,36 @@ class AnalysisToolServer {
             this._sendClients(client)
         },
 
-        getProject: (client, event) => {
-            console.log(event)
+        getProject: async (client, event) => {
+            const passcode = event['passcode']
+            if(passcode && typeof passcode == 'string' && passcode.length == 24) {
+                const id = mongo.ObjectId(passcode)
+                const result = await this.projects.findOne({_id: id})
+                if(result) {
+                    client.emit('event', {
+                        name: 'project',
+                        project: result,
+                    })
+                }
+            }
         },
+
+        publishProject: async (client, event) => {
+            const project = event['project']
+            const result = await this.projects.insertOne(project)
+            const id = result.insertedId.toString()
+            client.emit('event', {
+                name: 'published',
+                passcode: id,
+            })
+        }
     }
 }
 
 
 // main
-(() => {
+(async () => {
     const server = new AnalysisToolServer()
-    server.start()
+    await server.start()
 })()
 
