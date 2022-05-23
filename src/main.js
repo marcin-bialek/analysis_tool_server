@@ -4,13 +4,18 @@ const socketio = require('socket.io')
 
 
 class AnalysisToolServer {
+    constructor() {
+        this.DATABASE_FILE = process.env['DATABASE_FILE'] || 'data.nosql'
+        this.SERVER_PORT = process.env['SERVER_PORT'] || 8080
+    }
+
     start() {
-        this.database = nosql.load('data.nosql')
+        this.database = nosql.load(this.DATABASE_FILE)
         this.httpServer = new http.createServer()
         this.ioServer = socketio(this.httpServer)
         this.ioServer.on('connection', this._handleConnection.bind(this))
-        this.httpServer.listen(8080, () => {
-            console.log('Listening...')
+        this.httpServer.listen(this.SERVER_PORT, () => {
+            console.log(`Listening on port ${this.SERVER_PORT}...`)
         })
     }
 
