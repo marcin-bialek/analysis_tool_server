@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "nosql": "^6.1.0",
+    "socket.io": "^2.4.1"
+  }
+}
