@@ -46,28 +46,27 @@ class AnalysisToolServer {
             }
         })
         client.on('disconnect', () => {
-            this._sendClients(null)
+            this._sendClients(client)
         })
     }
 
     _sendClients(client) {
         const clients = this.ioServer.clients().connected
-        const event = {
-            name: 'clients',
-            clients: Object.keys(clients).reduce((m, id) => {
-                if(clients[id].clientId && clients[id].username) {
-                    m[clients[id].clientId] = clients[id].username
-                }
-                return m
-            }, {}),
-        }
-        if(client) {
-            client.emit('event', event)
-        }
-        else {
-            this.ioServer.emit('event', event)
-            this.ioServer.em
-        }
+        Object.keys(client.rooms).forEach(name => {
+            const room = this.ioServer.sockets.adapter.rooms[name]
+            const roomClients = Object.keys(room.sockets)
+                .map(id => clients[id])
+                .reduce((m, client) => {
+                    if(client.clientId && client.username) {
+                        m[client.clientId] = client.username
+                    }
+                    return m
+                }, {})
+            this.ioServer.to(name).emit('event', {
+                name: 'clients',
+                clients: roomClients,
+            })
+        })
     }
 
     _eventHandlers = {
@@ -79,11 +78,6 @@ class AnalysisToolServer {
         hello: (client, event) => {
             client.clientId = event.clientId
             client.username = event.username
-            this._sendClients(null)
-        },
-
-        getClients: (client, _) => {
-            this._sendClients(client)
         },
 
         getProject: async (client, event) => {
@@ -92,10 +86,15 @@ class AnalysisToolServer {
                 const id = mongo.ObjectId(passcode)
                 const result = await this.projects.findOne({_id: id})
                 if(result) {
-                    client.emit('event', {
-                        name: 'project',
-                        project: result,
-                    })
+                    client.project = result
+                    client.passcode = passcode
+                    client.join(passcode, () => {
+                        this._sendClients(client)
+                        client.emit('event', {
+                            name: 'project',
+                            project: result,
+                        })
+                    })    
                 }
             }
         },
@@ -104,11 +103,28 @@ class AnalysisToolServer {
             const project = event['project']
             const result = await this.projects.insertOne(project)
             const id = result.insertedId.toString()
-            client.emit('event', {
-                name: 'published',
-                passcode: id,
+            client.project = await this.projects.findOne({_id: id})
+            client.passcode = id
+            client.join(id, () => {
+                this._sendClients(client)
+                client.emit('event', {
+                    name: 'published',
+                    passcode: id,
+                })
             })
-        }
+        },
+
+        codeAdd: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+            }
+        },
+
+        codeRemove: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+            }
+        },
     }
 }
 
