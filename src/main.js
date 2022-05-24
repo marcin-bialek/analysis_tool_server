@@ -144,6 +144,36 @@ class AnalysisToolServer {
                 }, {$set: updates})
             }
         },
+
+        noteAdd: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+                await this.database.collection('projects').updateOne(client.project, {
+                    $push: {notes: event['note']}
+                })
+            }
+        },
+
+        noteRemove: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+                await this.database.collection('projects').updateOne(client.project, {
+                    $pull: {notes: {id: event['noteId']}}
+                })
+            }
+        },
+
+        noteUpdate: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+                const updates = {}
+                if(event['text']) updates['notes.$.text'] = event['text']
+                await this.database.collection('projects').updateOne({
+                    _id: client.project._id,
+                    'notes.id': event['noteId'], 
+                }, {$set: updates})
+            }
+        },
     }
 }
 
