@@ -136,6 +136,38 @@ class AnalysisToolServer {
 
         // TODO: textFileUpdate: async (client, event) => {},
 
+        codingVersionAdd: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                    'textFiles.id': event['textFileId'],
+                }, {
+                    $push: {
+                        'textFiles.$.codingVersions': event['codingVersion']
+                    }
+                })
+            }
+        },
+
+        codingVersionRemove: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                    'textFiles.id': event['textFileId'],
+                }, {
+                    $pull: {
+                        'textFiles.$.codingVersions': {
+                            id: event['codingVersionId'],
+                        }
+                    }
+                })
+            }
+        },
+
+        // TODO: codingVersionUpdate: async (client, event) => {},
+
         codeAdd: async (client, event) => {
             if(client.projectId) {
                 client.broadcast.to(client.projectId).emit('event', event);
