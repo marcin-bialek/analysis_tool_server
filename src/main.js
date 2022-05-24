@@ -86,8 +86,7 @@ class AnalysisToolServer {
                 const id = mongo.ObjectId(passcode)
                 const result = await this.projects.findOne({_id: id})
                 if(result) {
-                    client.project = result
-                    client.passcode = passcode
+                    client.projectId = passcode
                     client.join(passcode, () => {
                         this._sendClients(client)
                         client.emit('event', {
@@ -103,8 +102,7 @@ class AnalysisToolServer {
             const project = event['project']
             const result = await this.projects.insertOne(project)
             const id = result.insertedId.toString()
-            client.project = await this.projects.findOne({_id: id})
-            client.passcode = id
+            client.projectId = id
             client.join(id, () => {
                 this._sendClients(client)
                 client.emit('event', {
@@ -115,61 +113,69 @@ class AnalysisToolServer {
         },
 
         codeAdd: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
-                this.database.collection('projects').updateOne(client.project, {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
                     $push: {codes: event['code']}
                 })
             }
         },
 
         codeRemove: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
-                this.database.collection('projects').updateOne(client.project, {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
                     $pull: {codes: {id: event['codeId']}}
                 })
             }
         },
 
         codeUpdate: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
                 const updates = {}
                 if(event['codeName']) updates['codes.$.name'] = event['codeName']
                 if(event['codeColor']) updates['codes.$.color'] = event['codeColor']
-                this.database.collection('projects').updateOne({
-                    _id: client.project._id,
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
                     'codes.id': event['codeId'], 
                 }, {$set: updates})
             }
         },
 
         noteAdd: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
-                await this.database.collection('projects').updateOne(client.project, {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.database.collection('projects').updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
                     $push: {notes: event['note']}
                 })
             }
         },
 
         noteRemove: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
-                await this.database.collection('projects').updateOne(client.project, {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.database.collection('projects').updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
                     $pull: {notes: {id: event['noteId']}}
                 })
             }
         },
 
         noteUpdate: async (client, event) => {
-            if(client.passcode && client.project) {
-                client.broadcast.to(client.passcode).emit('event', event);
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
                 const updates = {}
                 if(event['text']) updates['notes.$.text'] = event['text']
                 await this.database.collection('projects').updateOne({
-                    _id: client.project._id,
+                    _id: mongo.ObjectId(client.projectId),
                     'notes.id': event['noteId'], 
                 }, {$set: updates})
             }
