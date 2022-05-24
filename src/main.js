@@ -168,6 +168,50 @@ class AnalysisToolServer {
 
         // TODO: codingVersionUpdate: async (client, event) => {},
 
+        codingAdd: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                    'textFiles.id': event['textFileId'],
+                }, {
+                    $push: {
+                        'textFiles.$[textFile].codingVersions.$[codingVersion].codings': event['coding']
+                    }
+                }, {
+                    arrayFilters: [
+                        {'textFile.id': event['textFileId']},
+                        {'codingVersion.id': event['codingVersionId']},
+                    ],
+                })
+            }
+        },
+
+        codingRemove: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                    'textFiles.id': event['textFileId'],
+                }, {
+                    $pull: {
+                        'textFiles.$[textFile].codingVersions.$[codingVersion].codings': {
+                            codeId: event.coding.codeId,
+                            start: event.coding.start,
+                            length: event.coding.length,
+                        }
+                    }
+                }, {
+                    arrayFilters: [
+                        {'textFile.id': event['textFileId']},
+                        {'codingVersion.id': event['codingVersionId']},
+                    ]
+                })
+            }
+        },
+
+        // TODO: codingUpdate: async (client, event) => {},
+
         codeAdd: async (client, event) => {
             if(client.projectId) {
                 client.broadcast.to(client.projectId).emit('event', event);
