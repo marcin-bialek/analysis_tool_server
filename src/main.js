@@ -117,12 +117,18 @@ class AnalysisToolServer {
         codeAdd: async (client, event) => {
             if(client.passcode && client.project) {
                 client.broadcast.to(client.passcode).emit('event', event);
+                this.database.collection('projects').updateOne(client.project, {
+                    $push: {codes: event['code']}
+                })
             }
         },
 
         codeRemove: async (client, event) => {
             if(client.passcode && client.project) {
                 client.broadcast.to(client.passcode).emit('event', event);
+                this.database.collection('projects').updateOne(client.project, {
+                    $pull: {codes: {id: event['codeId']}}
+                })
             }
         },
     }
