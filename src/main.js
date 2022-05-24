@@ -131,6 +131,19 @@ class AnalysisToolServer {
                 })
             }
         },
+
+        codeUpdate: async (client, event) => {
+            if(client.passcode && client.project) {
+                client.broadcast.to(client.passcode).emit('event', event);
+                const updates = {}
+                if(event['codeName']) updates['codes.$.name'] = event['codeName']
+                if(event['codeColor']) updates['codes.$.color'] = event['codeColor']
+                this.database.collection('projects').updateOne({
+                    _id: client.project._id,
+                    'codes.id': event['codeId'], 
+                }, {$set: updates})
+            }
+        },
     }
 }
 
