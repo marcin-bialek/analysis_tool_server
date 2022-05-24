@@ -112,6 +112,30 @@ class AnalysisToolServer {
             })
         },
 
+        textFileAdd: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
+                    $push: {textFiles: event['textFile']}
+                })
+            }
+        },
+
+        textFileRemove: async (client, event) => {
+            if(client.projectId) {
+                client.broadcast.to(client.projectId).emit('event', event);
+                await this.projects.updateOne({
+                    _id: mongo.ObjectId(client.projectId),
+                }, {
+                    $pull: {textFiles: {id: event['textFileId']}}
+                })
+            }
+        },
+
+        // TODO: textFileUpdate: async (client, event) => {},
+
         codeAdd: async (client, event) => {
             if(client.projectId) {
                 client.broadcast.to(client.projectId).emit('event', event);
