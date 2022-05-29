@@ -1,0 +1,23 @@
+version: "3"
+services:
+  server:
+    container_name: atool-server
+    image: atool-server:latest
+    restart: always
+    command: node /app/main.js
+    environment:
+      - DATABASE_URL=mongodb://atool-mongo:27017/
+      - SERVER_PORT=8080
+      # - TLS_CERT_PATH=
+      # - TLS_KEY_PATH=
+      # - TLS_PASSPHRASE=
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongo
+
+  mongo:
+    container_name: atool-mongo
+    restart: always
+    image: mongo
+
