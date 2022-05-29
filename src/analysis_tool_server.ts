@@ -135,6 +135,12 @@ export class AnalysisToolServer {
                     }
                 })
             }
+            else {
+                client.sendEvent({
+                    name: 'project',
+                    project: null,
+                })
+            }
         },
 
         publishProject: async (client, event) => {
@@ -259,11 +265,31 @@ export class AnalysisToolServer {
         noteUpdate: async (client, event) => {
             if (client.projectId) {
                 client.broadcastToProject(event)
-                this.database.updateNote(
+                await this.database.updateNote(
                     client.projectId,
                     event.noteId,
-                    event.text
+                    event.title,
+                    event.text,
                 )
+            }
+        },
+
+        noteAddToLine: async (client, event) => {
+            if (client.projectId) {
+                client.broadcastToProject(event)
+                await this.database.addNoteToLine(
+                    client.projectId,
+                    event.codingVersionId,
+                    event.lineIndex,
+                    event.noteId,
+                )
+            }
+        },
+
+        noteRemoveFromLine: async (client, event) => {
+            if (client.projectId) {
+                client.broadcastToProject(event)
+                // TODO
             }
         },
     }

@@ -187,8 +187,9 @@ export class Database {
         })
     }
 
-    public async updateNote(projectId: string, noteId: string, text: any) {
+    public async updateNote(projectId: string, noteId: string, title: any, text: any) {
         const updates = {}
+        if (title) updates['notes.$.title'] = title
         if (text) updates['notes.$.text'] = text
         await this.projects.updateOne({
             _id: new mongo.ObjectId(projectId),
@@ -196,5 +197,9 @@ export class Database {
         }, {
             $set: updates
         })
+    }
+
+    public async addNoteToLine(projectId: string, codingVersionId: string, lineIndex: number, noteId: string) {
+        // TODO
     }
 }
