@@ -1,4 +1,17 @@
 {
+  "name": "analysis_tool_server",
+  "version": "0.1.0",
+  "main": "dist/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcin-bialek/analysis_tool_server.git"
+  },
+  "author": "Marcin Białek",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node dist/main.js"
+  },
   "dependencies": {
     "mongodb": "^4.6.0",
     "socket.io": "^2.4.1"
