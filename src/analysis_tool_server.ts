@@ -164,7 +164,6 @@ export class AnalysisToolServer {
             }
         },
 
-
         textFileRemove: async (client, event) => {
             if (client.projectId) {
                 client.broadcastToProject(event)
@@ -172,7 +171,17 @@ export class AnalysisToolServer {
             }
         },
 
-        // TODO: textFileUpdate: async (client, event) => {},
+        textFileUpdate: async (client, event) => {
+            if (client.projectId) {
+                client.broadcastToProject(event)
+                await this.database.updateTextFile(
+                    client.projectId,
+                    event.textFileId,
+                    event.textFileName,
+                    event.rawText,
+                )
+            }
+        },
 
         codingVersionAdd: async (client, event) => {
             if (client.projectId) {
@@ -196,7 +205,17 @@ export class AnalysisToolServer {
             }
         },
 
-        // TODO: codingVersionUpdate: async (client, event) => {},
+        codingVersionUpdate: async (client, event) => {
+            if (client.projectId) {
+                client.broadcastToProject(event)
+                await this.database.updateCodingVersion(
+                    client.projectId,
+                    event.textFileId,
+                    event.codingVersionId,
+                    event.codingVersionName,
+                )
+            }
+        },
 
         codingAdd: async (client, event) => {
             if (client.projectId) {
@@ -289,7 +308,12 @@ export class AnalysisToolServer {
         noteRemoveFromLine: async (client, event) => {
             if (client.projectId) {
                 client.broadcastToProject(event)
-                // TODO
+                this.database.removeNoteFromLine(
+                    client.projectId,
+                    event.codingVersionId,
+                    event.lineIndex,
+                    event.noteId,
+                )
             }
         },
     }

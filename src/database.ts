@@ -56,14 +56,44 @@ export class Database {
     }
 
     public async removeTextFile(projectId: string, textFileId: string): Promise<void> {
+        const project = await this.projects.findOne({
+            _id: new mongo.ObjectId(projectId),
+        })
+        const textFiles = project.textFiles.filter((t: any) => t.id == textFileId)
+        if (textFiles.length > 0) {
+            for (const version of textFiles[0].codingVersions) {
+                await this.removeCodingVersion(projectId, textFileId, version.id);
+            }
+            await this.projects.updateOne({
+                _id: new mongo.ObjectId(projectId),
+            }, {
+                $pull: {
+                    textFiles: {
+                        id: textFileId
+                    }
+                }
+            })
+        }
+    }
+
+    public async updateTextFile(projectId: string, textFileId: string, textFileName?: string, rawText?: string) {
+        const updates = {}
+        if (textFileName) updates['textFiles.$.name'] = textFileName
+        if (rawText) {
+            const project = await this.projects.findOne({
+                _id: new mongo.ObjectId(projectId)
+            })
+            const textFiles = project.textFiles.filter((t: any) => t.id == textFileId)
+            if (textFiles.length > 0 && textFiles[0].codingVersions.length > 0) {
+                return
+            }
+            updates['textFiles.$.text'] = rawText
+        }
         await this.projects.updateOne({
             _id: new mongo.ObjectId(projectId),
+            'textFiles.id': textFileId,
         }, {
-            $pull: {
-                textFiles: {
-                    id: textFileId
-                }
-            }
+            $set: updates
         })
     }
 
@@ -93,6 +123,28 @@ export class Database {
         }, {
             arrayFilters: [
                 { 'textFile.id': textFileId },
+            ]
+        })
+        await this.projects.updateOne({
+            _id: new mongo.ObjectId(projectId),
+        }, {
+            $unset: {
+                [`notes.$[].codingLines.${codingVersionId}`]: {}
+            }
+        })
+    }
+
+    public async updateCodingVersion(projectId: string, textFileId: string, codingVersionId: string, codingVersionName?: string) {
+        const updates = {}
+        if (codingVersionName) updates['textFiles.$[textFile].codingVersions.$[codingVersion].name'] = codingVersionName
+        await this.projects.updateOne({
+            _id: new mongo.ObjectId(projectId),
+        }, {
+            $set: updates
+        }, {
+            arrayFilters: [
+                { 'textFile.id': textFileId },
+                { 'codingVersion.id': codingVersionId },
             ]
         })
     }
@@ -146,14 +198,30 @@ export class Database {
             _id: new mongo.ObjectId(projectId),
         }, {
             $pull: {
+                'textFiles.$[].codingVersions.$[].codings': {
+                    codeId: codeId,
+                }
+            }
+        })
+        await this.projects.updateOne({
+            _id: new mongo.ObjectId(projectId),
+        }, {
+            $pull: {
                 codes: {
                     id: codeId
                 }
             }
         })
+        const project = await this.projects.findOne({
+            _id: new mongo.ObjectId(projectId)
+        })
+        const children = project.codes.filter((c: any) => c.parentId == codeId)
+        for (const child of children) {
+            await this.removeCode(projectId, child.id)
+        }
     }
 
-    public async updateCode(projectId: string, codeId: string, codeName: any, codeColor: any) {
+    public async updateCode(projectId: string, codeId: string, codeName?: string, codeColor?: number) {
         const updates = {}
         if (codeName) updates['codes.$.name'] = codeName
         if (codeColor) updates['codes.$.color'] = codeColor
@@ -187,7 +255,7 @@ export class Database {
         })
     }
 
-    public async updateNote(projectId: string, noteId: string, title: any, text: any) {
+    public async updateNote(projectId: string, noteId: string, title?: string, text?: string) {
         const updates = {}
         if (title) updates['notes.$.title'] = title
         if (text) updates['notes.$.text'] = text
@@ -200,6 +268,30 @@ export class Database {
     }
 
     public async addNoteToLine(projectId: string, codingVersionId: string, lineIndex: number, noteId: string) {
-        // TODO
+        await this.projects.updateOne({
+            _id: new mongo.ObjectId(projectId),
+        }, {
+            $push: {
+                [`notes.$[note].codingLines.${codingVersionId}`]: lineIndex,
+            }
+        }, {
+            arrayFilters: [
+                { 'note.id': noteId },
+            ]
+        })
+    }
+
+    public async removeNoteFromLine(projectId: string, codingVersionId: string, lineIndex: number, noteId: string) {
+        await this.projects.updateOne({
+            _id: new mongo.ObjectId(projectId),
+        }, {
+            $pull: {
+                [`notes.$[note].codingLines.${codingVersionId}`]: lineIndex,
+            }
+        }, {
+            arrayFilters: [
+                { 'note.id': noteId },
+            ]
+        })
     }
 }
