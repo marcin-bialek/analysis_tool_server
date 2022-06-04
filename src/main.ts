@@ -1,8 +1,8 @@
-import { AnalysisToolServer } from "./analysis_tool_server"
+import { QDAMonoServer } from "./qdamono_server"
 
 
 (async () => {
-    const server = new AnalysisToolServer({
+    const server = new QDAMonoServer({
         databaseUrl: process.env['DATABASE_URL'] || 'mongodb://127.0.0.1:27017/',
         port: process.env['SERVER_PORT'] ? parseInt(process.env['SERVER_PORT']) : 8080,
         tlsCertPath: process.env['TLS_CERT_PATH'],

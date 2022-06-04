@@ -5,7 +5,7 @@ import * as io from 'socket.io'
 import { Database } from './database'
 
 
-export interface AnalysisToolServerConfig {
+export interface QDAMonoServerConfig {
     databaseUrl: string
     port: number
     tlsCertPath?: string
@@ -27,13 +27,13 @@ interface Client extends io.Socket {
 type EventHandler = (client: Client, event: any) => void
 
 
-export class AnalysisToolServer {
-    private config: AnalysisToolServerConfig
+export class QDAMonoServer {
+    private config: QDAMonoServerConfig
     private database: Database
     private httpServer: http.Server | https.Server
     private ioServer: io.Server
 
-    public constructor(config: AnalysisToolServerConfig) {
+    public constructor(config: QDAMonoServerConfig) {
         this.config = config
     }
 
