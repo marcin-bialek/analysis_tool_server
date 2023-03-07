@@ -2,6 +2,7 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
+    auth_key: str
     db_url: str
 
     class Config:

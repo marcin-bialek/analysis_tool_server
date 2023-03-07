@@ -17,6 +17,7 @@ Prepare environment and install dependencies.
 
 Create `.env` file with necessary environment variables (generate QDAM_AUTH_KEY yourself and protect it):
 ```
+QDAM_AUTH_KEY = yAyARFNxXSnUt5BkrhDSRvt9sdF2NQQP
 QDAM_DB_URL = mongodb://localhost:27017
 ```
 

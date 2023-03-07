@@ -5,6 +5,15 @@ from fastapi import FastAPI
 
 import qdamono_server.db as db
 from qdamono_server.event_handling import sio, SessionData, SocketIOSession
+from qdamono_server.auth import (
+    User,
+    auth_router,
+    current_active_user,
+    register_router,
+    reset_password_router,
+    users_router,
+    verify_router,
+)
 
 logger = getLogger(__name__)
 
@@ -12,6 +21,12 @@ app = FastAPI(debug=True, root_path="/")
 sio_app = socketio.ASGIApp(sio, socketio_path="/")
 
 app.mount("/socket.io/", sio_app)
+
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(register_router, prefix="/auth", tags=["auth"])
+app.include_router(reset_password_router, prefix="/auth", tags=["auth"])
+app.include_router(verify_router, prefix="/auth", tags=["auth"])
+app.include_router(users_router, prefix="/auth", tags=["auth"])
 
 
 @app.get("/")
