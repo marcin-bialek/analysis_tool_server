@@ -6,13 +6,12 @@ from fastapi import FastAPI
 import qdamono_server.db as db
 from qdamono_server.event_handling import sio, SessionData, SocketIOSession
 from qdamono_server.auth import (
-    User,
     auth_router,
-    current_active_user,
     register_router,
     reset_password_router,
     users_router,
     verify_router,
+    get_user_manager,
 )
 
 logger = getLogger(__name__)
@@ -40,10 +39,25 @@ async def start_db():
 
 
 @sio.on("connect")
-async def on_connect(sid: str, env: dict, auth: str | None = None):
+async def on_connect(
+    sid: str,
+    env: dict,
+    auth: str | None = None,
+):
     logger.debug(f"connect {sid}")
     # logger.debug(", ".join([f"{k}: {v}" for k, v in env.items()]))
-    # TODO: authenticate user
+
+    if auth is None:
+        logger.error("Attempted an unauthenticated SocketIO connection")
+        return False
+
+    user_manager = get_user_manager()
+    user = await user_manager.authenticate(auth)
+
+    if user is None:
+        logger.err("User is unauthenticated")
+        return False
+
     await sio.save_session(sid, SessionData())
 
 

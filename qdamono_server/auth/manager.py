@@ -7,7 +7,7 @@ from password_strength import PasswordPolicy, PasswordStats, tests, tests_base
 
 from qdamono_server.settings import settings
 
-from .db import get_user_db
+from .db import get_user_db, yield_user_db
 from .models import User
 
 logger = getLogger(__name__)
@@ -138,5 +138,9 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
             )
 
 
-async def get_user_manager(user_db=Depends(get_user_db)):
+async def yield_user_manager(user_db=Depends(yield_user_db)):
     yield UserManager(user_db)
+
+
+def get_user_manager():
+    return UserManager(get_user_db())
