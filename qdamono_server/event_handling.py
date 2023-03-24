@@ -1,6 +1,5 @@
 import inspect
 from functools import wraps
-from logging import getLogger
 from typing import Awaitable, Callable, NewType, TypedDict
 
 import socketio
@@ -9,8 +8,9 @@ from pydantic.error_wrappers import ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from qdamono_server import exceptions, models
+from qdamono_server.settings import settings
 
-logger = getLogger(__name__)
+logger = settings.logging.get_logger(__name__)
 
 sio = socketio.AsyncServer(async_mode="asgi")
 

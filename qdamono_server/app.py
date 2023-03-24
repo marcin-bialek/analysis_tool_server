@@ -1,20 +1,19 @@
-from logging import getLogger
-
 import socketio
 from fastapi import FastAPI
 
 import qdamono_server.db as db
-from qdamono_server.event_handling import sio, SessionData, SocketIOSession
 from qdamono_server.auth import (
     auth_router,
+    get_user_manager,
     register_router,
     reset_password_router,
     users_router,
     verify_router,
-    get_user_manager,
 )
+from qdamono_server.event_handling import SessionData, SocketIOSession, sio
+from qdamono_server.settings import settings
 
-logger = getLogger(__name__)
+logger = settings.logging.get_logger(__name__)
 
 app = FastAPI(debug=True, root_path="/")
 sio_app = socketio.ASGIApp(sio, socketio_path="/")

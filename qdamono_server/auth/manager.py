@@ -1,4 +1,3 @@
-from logging import getLogger
 from uuid import UUID
 
 from fastapi import Depends, Request
@@ -10,7 +9,7 @@ from qdamono_server.settings import settings
 from .db import get_user_db, yield_user_db
 from .models import User
 
-logger = getLogger(__name__)
+logger = settings.logging.get_logger(__name__)
 
 
 class PasswordRestrictions:

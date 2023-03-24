@@ -15,6 +15,7 @@ python-socketio = "^5.7.2"
 beanie = "^1.17.0"
 fastapi-users = {extras = ["beanie"], version = "^10.4.0"}
 password-strength = "^0.0.3"
+colorlog = "^6.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.1"
