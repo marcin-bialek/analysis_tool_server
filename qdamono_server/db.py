@@ -23,5 +23,6 @@ async def init_db():
             models.CodingVersion,
             auth_models.User,
             auth_models.AccessToken,
+            models.ProjectPrivilege,
         ],
     )

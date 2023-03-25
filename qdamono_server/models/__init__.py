@@ -5,3 +5,4 @@ from .events import *
 from .note import *
 from .project import *
 from .text_file import *
+from .project_privilege import *
