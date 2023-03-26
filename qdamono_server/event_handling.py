@@ -16,8 +16,7 @@ sio = socketio.AsyncServer(async_mode="asgi")
 
 
 class SessionData(TypedDict):
-    client_id: str | None
-    username: str | None
+    user_id: str
     project_id: str | None
 
 
@@ -33,20 +32,6 @@ def project_is_set(
     ):
         if self.project_id is None:
             raise exceptions.SessionStateError("Project not set.")
-        await f(self, *args, event=event, **kwargs)
-
-    return inner
-
-
-def username_is_set(
-    f: Callable[[SocketIOSession, models.events.BaseEvent], Awaitable[None]]
-):
-    @wraps(f)
-    async def inner(
-        self: SocketIOSession, *args, event: models.events.BaseEvent, **kwargs
-    ):
-        if self.username is None:
-            raise exceptions.SessionStateError("Username not set.")
         await f(self, *args, event=event, **kwargs)
 
     return inner
@@ -71,22 +56,13 @@ class SocketIOSession:
         self.sid = sid
 
     @property
-    def client_id(self):
-        return self.data.get("client_id")
+    def user_id(self):
+        return self.data.get("user_id")
 
-    @client_id.setter
-    def client_id(self, value: str | None):
-        logger.debug(f"Changing client_id from {self.client_id} to {value}")
-        self.data["client_id"] = value
-
-    @property
-    def username(self):
-        return self.data.get("username")
-
-    @username.setter
+    @user_id.setter
     def username(self, value: str | None):
-        logger.debug(f"Changing username from {self.username} to {value}")
-        self.data["username"] = value
+        logger.debug(f"Changing user_id from {self.user_id} to {value}")
+        self.data["user_id"] = value
 
     @property
     def project_id(self):
@@ -103,7 +79,7 @@ class SocketIOSession:
 
         for sid, _ in sio.manager.get_participants(namespace="/", room=project_id):
             session: SessionData = await sio.get_session(sid)
-            users[sid] = session.get("username")
+            users[sid] = session.get("user_id")
 
         logger.debug(f"Broadcasting participant list of room '{project_id}': {users}")
 
@@ -175,7 +151,9 @@ class SocketIOSession:
 
     # --- Event handlers ---
 
-    @username_is_set
+    async def event_get_client_id(self, event: models.events.GetClientIdEvent):
+        await self.send_event(models.events.ClientIdEvent(client_id=self.sid))
+
     @project_is_set
     @broadcast_to_project_after
     async def event_code_add(self, event: models.events.CodeAddEvent):
@@ -192,7 +170,6 @@ class SocketIOSession:
         project.codes.append(event.code)
         await project.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_code_remove(self, event: models.events.CodeRemoveEvent):
@@ -203,7 +180,6 @@ class SocketIOSession:
 
         await code.delete()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_code_update(self, event: models.events.CodeUpdateEvent):
@@ -220,7 +196,6 @@ class SocketIOSession:
 
         await code.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_coding_add(self, event: models.events.CodingAddEvent):
@@ -232,7 +207,6 @@ class SocketIOSession:
         coding_version.codings.append(event.coding)
         await coding_version.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_coding_remove(self, event: models.events.CodingRemoveEvent):
@@ -244,7 +218,6 @@ class SocketIOSession:
         coding_version.codings.remove(event.coding)
         await coding_version.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_coding_version_add(
@@ -260,7 +233,6 @@ class SocketIOSession:
         text_file.coding_versions.append(event.coding_version)
         await text_file.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_coding_version_remove(
@@ -283,7 +255,6 @@ class SocketIOSession:
                 text_file.coding_versions.pop(i)
         await text_file.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_coding_version_update(
@@ -297,24 +268,13 @@ class SocketIOSession:
         coding_version.name = event.coding_version_name
         await coding_version.save()
 
-    async def event_hello(self, event: models.events.HelloEvent):
-        self.client_id = event.client_id
-        self.username = event.username
-
-    @username_is_set
-    async def event_logout(self, event: models.events.LogoutEvent):
-        logger.info(f"{self.username} is logging out")
-
-        if self.project_id is not None:
-            await self.leave_project()
-
-        self.client_id = None
-        self.username = None
-
-    @username_is_set
     async def event_get_project(self, event: models.events.GetProjectEvent):
         logger.debug(f"passcode {event.passcode}")
-        project = await models.Project.get(event.passcode)
+        project = None
+        try:
+            project = await models.Project.get(event.passcode)
+        except ValidationError:
+            logger.error(f"The passcode is invalid: {event.passcode}")
 
         if project is not None:
             await self.enter_project(event.passcode)
@@ -334,12 +294,10 @@ class SocketIOSession:
         event_to_send = models.events.ProjectEvent(project=project)
         await self.send_event(event_to_send)
 
-    @username_is_set
     @project_is_set
     async def event_leave_project(self, event: models.events.LeaveProjectEvent):
         await self.leave_project()
 
-    @username_is_set
     async def event_publish_project(self, event: models.events.PublishProjectEvent):
         if event.project is None:
             raise exceptions.InvalidEventError("project is None.")
@@ -358,7 +316,6 @@ class SocketIOSession:
         )
         await self.send_event(published_event)
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_note_add_to_line(self, event: models.events.NoteAddToLineEvent):
@@ -374,7 +331,6 @@ class SocketIOSession:
 
         await note.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_note_add(
@@ -390,7 +346,6 @@ class SocketIOSession:
         project.notes.append(event.note)
         await project.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_note_remove_from_line(
@@ -408,7 +363,6 @@ class SocketIOSession:
 
         await note.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_note_remove(self, event: models.events.NoteRemoveEvent):
@@ -419,7 +373,6 @@ class SocketIOSession:
 
         await note.delete()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_note_update(self, event: models.events.NoteUpdateEvent):
@@ -436,7 +389,6 @@ class SocketIOSession:
 
         await note.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_text_file_add(self, event: models.events.TextFileAddEvent):
@@ -455,7 +407,6 @@ class SocketIOSession:
         project.text_files.append(event.text_file)
         await project.save()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_text_file_remove(self, event: models.events.TextFileRemoveEvent):
@@ -466,7 +417,6 @@ class SocketIOSession:
 
         await text_file.delete()
 
-    @username_is_set
     @project_is_set
     @broadcast_to_project_after
     async def event_text_file_update(self, event: models.events.TextFileUpdateEvent):

@@ -8,7 +8,7 @@ from fastapi_users.authentication.strategy.db import (
     DatabaseStrategy,
 )
 
-from .db import get_access_token_db
+from .db import get_access_token_db, yield_access_token_db
 from .manager import get_user_manager
 from .models import AccessToken, User
 
@@ -16,7 +16,7 @@ bearer_transport = BearerTransport(tokenUrl="auth/login")
 
 
 def get_database_strategy(
-    access_token_db: AccessTokenDatabase[AccessToken] = Depends(get_access_token_db),
+    access_token_db: AccessTokenDatabase[AccessToken] = Depends(yield_access_token_db),
 ) -> DatabaseStrategy:
     return DatabaseStrategy(access_token_db, lifetime_seconds=3600)
 
@@ -33,3 +33,10 @@ fastapi_users = FastAPIUsers[User, UUID](
 )
 
 current_active_user = fastapi_users.current_user(active=True)
+
+
+async def authenticate_token(token: str) -> User | None:
+    user_manager = get_user_manager()
+    return await get_database_strategy(get_access_token_db()).read_token(
+        token, user_manager
+    )

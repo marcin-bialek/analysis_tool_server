@@ -1,10 +1,11 @@
+from typing import TypedDict
 import socketio
 from fastapi import FastAPI
+from qdamono_server.auth.users import authenticate_token
 
 import qdamono_server.db as db
 from qdamono_server.auth import (
     auth_router,
-    get_user_manager,
     register_router,
     reset_password_router,
     users_router,
@@ -37,11 +38,15 @@ async def start_db():
     await db.init_db()
 
 
+class SioAuthDict(TypedDict):
+    token: str
+
+
 @sio.on("connect")
 async def on_connect(
     sid: str,
     env: dict,
-    auth: str | None = None,
+    auth: SioAuthDict | None = None,
 ):
     logger.debug(f"connect {sid}")
     # logger.debug(", ".join([f"{k}: {v}" for k, v in env.items()]))
@@ -50,14 +55,13 @@ async def on_connect(
         logger.error("Attempted an unauthenticated SocketIO connection")
         return False
 
-    user_manager = get_user_manager()
-    user = await user_manager.authenticate(auth)
+    user = await authenticate_token(auth.get("token"))
 
     if user is None:
         logger.err("User is unauthenticated")
         return False
 
-    await sio.save_session(sid, SessionData())
+    await sio.save_session(sid, SessionData(user_id=user.id))
 
 
 @sio.on("event")

@@ -13,6 +13,15 @@ class BaseEvent(BaseModel):
     name: str
 
 
+class GetClientIdEvent(BaseEvent):
+    name: str = Field("get_client_id", const=True)
+
+
+class ClientIdEvent(BaseEvent):
+    name: str = Field("client_id", const=True)
+    client_id: str
+
+
 class ClientsEvent(BaseEvent):
     name: str = Field("clients", const=True)
     clients: dict[str, str]
@@ -79,12 +88,6 @@ class CodingVersionUpdateEvent(BaseCodingVersionEvent):
     text_file_id: str
     coding_version_id: str
     coding_version_name: str | None
-
-
-class HelloEvent(BaseEvent):
-    name: str = Field("hello", const=True)
-    client_id: str
-    username: str
 
 
 class LogoutEvent(BaseEvent):
