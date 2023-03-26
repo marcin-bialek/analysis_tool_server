@@ -13,6 +13,7 @@ from qdamono_server.auth import (
 )
 from qdamono_server.event_handling import SessionData, SocketIOSession, sio
 from qdamono_server.settings import settings
+from qdamono_server.routes import project_router
 
 logger = settings.logging.get_logger(__name__)
 
@@ -26,6 +27,8 @@ app.include_router(register_router, prefix="/auth", tags=["auth"])
 app.include_router(reset_password_router, prefix="/auth", tags=["auth"])
 app.include_router(verify_router, prefix="/auth", tags=["auth"])
 app.include_router(users_router, prefix="/auth", tags=["auth"])
+
+app.include_router(project_router, prefix="/project", tags=["project"])
 
 
 @app.get("/")
@@ -61,7 +64,7 @@ async def on_connect(
         logger.err("User is unauthenticated")
         return False
 
-    await sio.save_session(sid, SessionData(user_id=user.id))
+    await sio.save_session(sid, SessionData(user_id=str(user.id)))
 
 
 @sio.on("event")

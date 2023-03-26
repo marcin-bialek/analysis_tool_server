@@ -98,6 +98,30 @@ class BaseProjectEvent(BaseEvent):
     pass
 
 
+class ProjectInfo(TypedDict):
+    id: str
+    name: str
+
+
+class GetProjectInfoEvent(BaseProjectEvent):
+    name: str = Field("get_project_info", const=True)
+    passcode: str
+
+
+class ProjectInfoEvent(BaseProjectEvent):
+    name: str = Field("project_info", const=True)
+    project_info: ProjectInfo | None
+
+
+class GetProjectListEvent(BaseProjectEvent):
+    name: str = Field("get_project_list", const=True)
+
+
+class ProjectListEvent(BaseProjectEvent):
+    name: str = Field("project_list", const=True)
+    project_list: list[ProjectInfo]
+
+
 class GetProjectEvent(BaseProjectEvent):
     name: str = Field("get_project", const=True)
     passcode: str

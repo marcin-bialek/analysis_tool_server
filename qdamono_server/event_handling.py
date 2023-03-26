@@ -268,6 +268,33 @@ class SocketIOSession:
         coding_version.name = event.coding_version_name
         await coding_version.save()
 
+    async def event_get_project_info(self, event: models.events.GetProjectInfoEvent):
+        project = None
+        try:
+            project = await models.Project.get(event.passcode)
+        except ValidationError:
+            logger.error(f"The passcode is invalid: {event.passcode}")
+
+        project_info: models.events.ProjectInfo | None = None
+        if project is not None:
+            project_info = models.events.ProjectInfo()
+            project_info["id"] = str(project.id)
+            project_info["name"] = project.name
+
+        event_to_send = models.events.ProjectInfoEvent(project_info=project_info)
+        await self.send_event(event_to_send)
+
+    async def event_get_project_list(self, event: models.events.GetProjectListEvent):
+        project_list = await models.Project.find_all().to_list()
+
+        project_info_list = [
+            models.events.ProjectInfo(id=str(project.id), name=project.name)
+            for project in project_list
+        ]
+
+        event_to_send = models.events.ProjectListEvent(project_list=project_info_list)
+        await self.send_event(event_to_send)
+
     async def event_get_project(self, event: models.events.GetProjectEvent):
         logger.debug(f"passcode {event.passcode}")
         project = None
@@ -275,17 +302,6 @@ class SocketIOSession:
             project = await models.Project.get(event.passcode)
         except ValidationError:
             logger.error(f"The passcode is invalid: {event.passcode}")
-
-        if project is not None:
-            await self.enter_project(event.passcode)
-            await project.fetch_all_links()
-
-        event_to_send = models.events.ProjectEvent(project=project)
-        await self.send_event(event_to_send)
-
-    async def event_get_project_data(self, event: models.events.GetProjectEvent):
-        logger.debug(f"passcode {event.passcode}")
-        project = await models.Project.get(event.passcode)
 
         if project is not None:
             await self.enter_project(event.passcode)
