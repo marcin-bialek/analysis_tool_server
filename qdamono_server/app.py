@@ -14,6 +14,7 @@ from qdamono_server.auth import (
 from qdamono_server.event_handling import SessionData, SocketIOSession, sio
 from qdamono_server.settings import settings
 from qdamono_server.routes import project_router
+from qdamono_server.routes import project_privilege_router
 
 logger = settings.logging.get_logger(__name__)
 
@@ -29,6 +30,7 @@ app.include_router(verify_router, prefix="/auth", tags=["auth"])
 app.include_router(users_router, prefix="/auth", tags=["auth"])
 
 app.include_router(project_router, prefix="/project", tags=["project"])
+app.include_router(project_privilege_router, prefix="/privilege", tags=["privilege"])
 
 
 @app.get("/")

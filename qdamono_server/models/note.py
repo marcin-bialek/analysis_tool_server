@@ -37,6 +37,3 @@ class Note(Document):
         )
         self_dict["_id"] = str(self.id)
         return self_dict
-
-    class Settings:
-        name = "notes"

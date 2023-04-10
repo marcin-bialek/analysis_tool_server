@@ -49,8 +49,5 @@ class Code(Document):
 
         return self_dict
 
-    class Settings:
-        name = "codes"
-
 
 Code.update_forward_refs()

@@ -38,9 +38,6 @@ class CodingVersion(Document):
         self_dict["_id"] = str(self.id)
         return self_dict
 
-    class Settings:
-        name = "coding_versions"
-
 
 from qdamono_server.models.coding import Coding, CodingDict
 

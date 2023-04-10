@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   qdamono-server:
     container_name: qdamono-server

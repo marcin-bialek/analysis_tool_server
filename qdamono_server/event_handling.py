@@ -1,13 +1,15 @@
 import inspect
 from functools import wraps
 from typing import Awaitable, Callable, NewType, TypedDict
+from uuid import UUID
 
 import socketio
-from beanie import WriteRules
 from pydantic.error_wrappers import ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from qdamono_server import exceptions, models
+from qdamono_server.auth.models.user import User
+from qdamono_server.repos import project_repo
 from qdamono_server.settings import settings
 
 logger = settings.logging.get_logger(__name__)
@@ -268,46 +270,32 @@ class SocketIOSession:
         coding_version.name = event.coding_version_name
         await coding_version.save()
 
-    async def event_get_project_info(self, event: models.events.GetProjectInfoEvent):
-        project = None
-        try:
-            project = await models.Project.get(event.passcode)
-        except ValidationError:
-            logger.error(f"The passcode is invalid: {event.passcode}")
-
-        project_info: models.events.ProjectInfo | None = None
-        if project is not None:
-            project_info = models.events.ProjectInfo()
-            project_info["id"] = str(project.id)
-            project_info["name"] = project.name
-
-        event_to_send = models.events.ProjectInfoEvent(project_info=project_info)
-        await self.send_event(event_to_send)
-
-    async def event_get_project_list(self, event: models.events.GetProjectListEvent):
-        project_list = await models.Project.find_all().to_list()
-
-        project_info_list = [
-            models.events.ProjectInfo(id=str(project.id), name=project.name)
-            for project in project_list
-        ]
-
-        event_to_send = models.events.ProjectListEvent(project_list=project_info_list)
-        await self.send_event(event_to_send)
-
     async def event_get_project(self, event: models.events.GetProjectEvent):
-        logger.debug(f"passcode {event.passcode}")
-        project = None
+        logger.debug(f"Get project: {event.passcode}")
+
         try:
-            project = await models.Project.get(event.passcode)
+            passcode = UUID(event.passcode)
         except ValidationError:
             logger.error(f"The passcode is invalid: {event.passcode}")
+            self.send_event(models.events.ProjectEvent())
+            return
 
-        if project is not None:
-            await self.enter_project(event.passcode)
-            await project.fetch_all_links()
+        user = await User.get(self.user_id)
+
+        if user is None:
+            logger.error(f"This should not happen. User not found: {self.user_id}")
+
+        try:
+            project = await project_repo.get(passcode, user=user)
+        except exceptions.DocumentNotFoundError:
+            logger.error(
+                f"Project not found or user unauthorized: {event.passcode}, {self.user_id}"
+            )
+            self.send_event(models.events.ProjectEvent())
+            return
 
         event_to_send = models.events.ProjectEvent(project=project)
+        await self.enter_project(event.passcode)
         await self.send_event(event_to_send)
 
     @project_is_set
@@ -315,21 +303,22 @@ class SocketIOSession:
         await self.leave_project()
 
     async def event_publish_project(self, event: models.events.PublishProjectEvent):
-        if event.project is None:
-            raise exceptions.InvalidEventError("project is None.")
+        user = await User.get(self.user_id)
+
+        if user is None:
+            logger.error(f"This should not happen. User not found: {self.user_id}")
 
         try:
-            await event.project.insert(link_rule=WriteRules.WRITE)
-        except DuplicateKeyError:
-            raise exceptions.DocumentAlreadyExistsError(
-                f"Project with id {event.project.id} already exists"
-            )
+            await project_repo.create(event.project, user=user)
+        except exceptions.DuplicateDocumentError as e:
+            logger.error(f"Project cannot be published: {e}")
+            return
 
-        self.project_id = event.project.id
+        if self.project_id is not None:
+            await self.leave_project()
+            await self.enter_project(event.project.id)
 
-        published_event = models.events.PublishedEvent(
-            name="published", passcode=str(event.project.id)
-        )
+        published_event = models.events.PublishedEvent(passcode=str(event.project.id))
         await self.send_event(published_event)
 
     @project_is_set
@@ -355,7 +344,7 @@ class SocketIOSession:
         try:
             await event.note.create()
         except DuplicateKeyError:
-            raise exceptions.DocumentAlreadyExistsError(
+            raise exceptions.DuplicateDocumentError(
                 f"Note with id {event.note.id} already exists"
             )
 
@@ -416,7 +405,7 @@ class SocketIOSession:
         try:
             await event.text_file.create()
         except DuplicateKeyError:
-            raise exceptions.DocumentAlreadyExistsError(
+            raise exceptions.DuplicateDocumentError(
                 f"Text file with id {event.text_file.id} already exists."
             )
 

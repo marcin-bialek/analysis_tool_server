@@ -4,16 +4,18 @@ from uuid import UUID, uuid4
 
 from beanie import Document, Link
 from pydantic import Field
+import pymongo
 
 from qdamono_server.models.project import Project
 from qdamono_server.auth.models.user import User
 
 
 class ProjectPrivilegeLevel(IntEnum):
-    OWNER = 0
-    MAINTAINER = 10
+    UNAUTHORIZED = 0
+    GUEST = 10
     CONTRIBUTOR = 20
-    GUEST = 30
+    MAINTAINER = 30
+    OWNER = 40
 
 
 class ProjectPrivilegeDict(TypedDict):
@@ -69,4 +71,9 @@ class ProjectPrivilege(Document):
         return self_dict
 
     class Settings:
-        name = "project_privileges"
+        indexes = [
+            pymongo.IndexModel(
+                [("user_id", pymongo.TEXT), ("project_id", pymongo.TEXT)],
+                unique=True,
+            )
+        ]

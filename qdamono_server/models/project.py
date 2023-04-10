@@ -10,6 +10,7 @@ from pydantic import Field
 class ProjectDict(TypedDict):
     _id: str
     name: str
+    is_public: bool
     codes: list[CodeDict]
     notes: list[NoteDict]
     text_files: list[TextFileDict]
@@ -18,6 +19,7 @@ class ProjectDict(TypedDict):
 class Project(Document):
     id: UUID = Field(default_factory=uuid4)
     name: str
+    is_public: bool = Field(False)
     codes: list[Link[Code]]
     notes: list[Link[Note]]
     text_files: list[Link[TextFile]]
@@ -41,9 +43,6 @@ class Project(Document):
         )
         self_dict["_id"] = str(self.id)
         return self_dict
-
-    class Settings:
-        name = "projects"
 
 
 from qdamono_server.models.code import Code, CodeDict

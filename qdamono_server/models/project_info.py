@@ -1,26 +1,23 @@
 from __future__ import annotations
 
 from typing import AbstractSet, Any, Mapping, TypedDict
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from beanie import Document, Link
-from pydantic import Field
+from pydantic import BaseModel
 
-from qdamono_server.models.coding_version import CodingVersion, CodingVersionDict
+from qdamono_server.models.project_privilege import ProjectPrivilegeLevel
 
 
-class TextFileDict(TypedDict):
+class ProjectInfoDict(TypedDict):
     _id: str
     name: str
-    text: str
-    coding_versions: list[CodingVersionDict]
+    privilege: int
 
 
-class TextFile(Document):
-    id: UUID = Field(default_factory=uuid4)
+class ProjectInfo(BaseModel):
+    id: UUID
     name: str
-    text: str
-    coding_versions: list[Link[CodingVersion]]
+    privilege: ProjectPrivilegeLevel
 
     def dict(
         self,
@@ -28,7 +25,7 @@ class TextFile(Document):
         by_alias: bool = True,
         exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
         **kwargs,
-    ) -> TextFileDict:
+    ) -> ProjectInfoDict:
         if exclude is None:
             if isinstance(exclude, set):
                 exclude |= {"id"}
@@ -36,7 +33,7 @@ class TextFile(Document):
                 exclude |= {"id": True}
             else:
                 exclude = {"id"}
-        self_dict: TextFileDict = super().dict(
+        self_dict: ProjectInfoDict = super().dict(
             *args, exclude=exclude, by_alias=by_alias, **kwargs
         )
         self_dict["_id"] = str(self.id)

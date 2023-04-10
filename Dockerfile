@@ -17,5 +17,3 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --without dev --no-interaction --no-ansi
 
 COPY . /qdamono_server
-
-RUN ls -l

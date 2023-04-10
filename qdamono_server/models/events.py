@@ -98,30 +98,6 @@ class BaseProjectEvent(BaseEvent):
     pass
 
 
-class ProjectInfo(TypedDict):
-    id: str
-    name: str
-
-
-class GetProjectInfoEvent(BaseProjectEvent):
-    name: str = Field("get_project_info", const=True)
-    passcode: str
-
-
-class ProjectInfoEvent(BaseProjectEvent):
-    name: str = Field("project_info", const=True)
-    project_info: ProjectInfo | None
-
-
-class GetProjectListEvent(BaseProjectEvent):
-    name: str = Field("get_project_list", const=True)
-
-
-class ProjectListEvent(BaseProjectEvent):
-    name: str = Field("project_list", const=True)
-    project_list: list[ProjectInfo]
-
-
 class GetProjectEvent(BaseProjectEvent):
     name: str = Field("get_project", const=True)
     passcode: str
@@ -202,18 +178,18 @@ class TextFileUpdateEvent(TextFileEvent):
     text: str | None
 
 
-from qdamono_server.models.project import Project
 from qdamono_server.models.code import Code
 from qdamono_server.models.coding import Coding
 from qdamono_server.models.coding_version import CodingVersion
 from qdamono_server.models.note import Note
+from qdamono_server.models.project import Project
 from qdamono_server.models.text_file import TextFile
 
 CodeAddEvent.update_forward_refs()
-ProjectEvent.update_forward_refs()
-PublishProjectEvent.update_forward_refs()
-NoteAddEvent.update_forward_refs()
-TextFileAddEvent.update_forward_refs()
 CodingAddEvent.update_forward_refs()
 CodingRemoveEvent.update_forward_refs()
 CodingVersionAddEvent.update_forward_refs()
+NoteAddEvent.update_forward_refs()
+ProjectEvent.update_forward_refs()
+PublishProjectEvent.update_forward_refs()
+TextFileAddEvent.update_forward_refs()

@@ -14,5 +14,9 @@ class DocumentNotFoundError(DocumentError):
     pass
 
 
-class DocumentAlreadyExistsError(DocumentError):
+class DuplicateDocumentError(DocumentError):
+    pass
+
+
+class AuthorizationError(RuntimeError):
     pass
