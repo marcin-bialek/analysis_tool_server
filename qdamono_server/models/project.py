@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import AbstractSet, Any, Mapping, TypedDict
+from typing import TypedDict
 from uuid import UUID, uuid4
 
 from beanie import Document, Link
@@ -24,23 +24,8 @@ class Project(Document):
     notes: list[Link[Note]]
     text_files: list[Link[TextFile]]
 
-    def dict(
-        self,
-        *args,
-        by_alias: bool = True,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        **kwargs,
-    ) -> ProjectDict:
-        if exclude is None:
-            if isinstance(exclude, set):
-                exclude |= {"id"}
-            elif isinstance(exclude, dict):
-                exclude |= {"id": True}
-            else:
-                exclude = {"id"}
-        self_dict: ProjectDict = super().dict(
-            *args, exclude=exclude, by_alias=by_alias, **kwargs
-        )
+    def dict(self, by_alias: bool = True) -> ProjectDict:
+        self_dict: ProjectDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict
 

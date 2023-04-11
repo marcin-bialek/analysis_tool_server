@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import AbstractSet, Any, Mapping, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -19,22 +19,7 @@ class ProjectInfo(BaseModel):
     name: str
     privilege: ProjectPrivilegeLevel
 
-    def dict(
-        self,
-        *args,
-        by_alias: bool = True,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        **kwargs,
-    ) -> ProjectInfoDict:
-        if exclude is None:
-            if isinstance(exclude, set):
-                exclude |= {"id"}
-            elif isinstance(exclude, dict):
-                exclude |= {"id": True}
-            else:
-                exclude = {"id"}
-        self_dict: ProjectInfoDict = super().dict(
-            *args, exclude=exclude, by_alias=by_alias, **kwargs
-        )
+    def dict(self, by_alias: bool = True) -> ProjectInfoDict:
+        self_dict: ProjectInfoDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict

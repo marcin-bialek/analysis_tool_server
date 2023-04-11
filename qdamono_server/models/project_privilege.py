@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import AbstractSet, Any, Mapping, TypedDict
+from typing import TypedDict
 from uuid import UUID, uuid4
 
 from beanie import Document, Link
@@ -31,23 +31,9 @@ class ProjectPrivilege(Document):
     user: Link[User] = Field(..., alias="user_id")
     project: Link[Project] = Field(..., alias="project_id")
 
-    def dict(
-        self,
-        *args,
-        by_alias: bool = True,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        **kwargs,
-    ) -> ProjectPrivilegeDict:
-        if exclude is None:
-            if isinstance(exclude, set):
-                exclude |= {"id", "project", "user"}
-            elif isinstance(exclude, dict):
-                exclude |= {"id": True, "project": True, "user": True}
-            else:
-                exclude = {"id", "project", "user"}
-
+    def dict(self, by_alias: bool = True) -> ProjectPrivilegeDict:
         self_dict: ProjectPrivilegeDict = super().dict(
-            *args, exclude=exclude, by_alias=by_alias, **kwargs
+            exclude={"id", "project", "user"}, by_alias=by_alias
         )
 
         self_dict["_id"] = str(self.id)

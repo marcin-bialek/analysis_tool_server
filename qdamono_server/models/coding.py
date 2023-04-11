@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import AbstractSet, Any, Mapping, TypedDict
+from typing import TypedDict
 
 from beanie import Link
 from pydantic import BaseModel, Field
@@ -19,22 +19,9 @@ class Coding(BaseModel):
 
     def dict(
         self,
-        *args,
         by_alias: bool = True,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        **kwargs,
     ) -> CodingDict:
-        if exclude is None:
-            if isinstance(exclude, set):
-                exclude |= {"code"}
-            elif isinstance(exclude, dict):
-                exclude |= {"code": True}
-            else:
-                exclude = {"code"}
-
-        self_dict: CodingDict = super().dict(
-            *args, exclude=exclude, by_alias=by_alias, **kwargs
-        )
+        self_dict: CodingDict = super().dict(exclude={"code"}, by_alias=by_alias)
 
         if isinstance(self.code, Link):
             self.code: Link

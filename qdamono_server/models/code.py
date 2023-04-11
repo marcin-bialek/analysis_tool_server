@@ -20,25 +20,11 @@ class Code(Document):
     color: int
     parent: Link[Code] | None = Field(alias="parent_id")
 
-    def dict(
-        self,
-        *args,
-        by_alias: bool = True,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        **kwargs,
-    ) -> CodeDict:
-        if exclude is None:
-            if isinstance(exclude, set):
-                exclude |= {"id", "parent"}
-            elif isinstance(exclude, dict):
-                exclude |= {"id": True, "parent": True}
-            else:
-                exclude = {"id", "parent"}
-        self_dict: CodeDict = super().dict(
-            *args, exclude=exclude, by_alias=by_alias, **kwargs
-        )
+    def dict(self, by_alias: bool = True) -> CodeDict:
+        self_dict: CodeDict = super().dict(exclude={"id", "parent"}, by_alias=by_alias)
 
         self_dict["_id"] = str(self.id)
+
         if self.parent is not None:
             if isinstance(self.parent, Link):
                 self.parent: Link
