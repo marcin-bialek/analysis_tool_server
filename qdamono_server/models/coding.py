@@ -17,10 +17,7 @@ class Coding(BaseModel):
     start: int
     length: int
 
-    def dict(
-        self,
-        by_alias: bool = True,
-    ) -> CodingDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> CodingDict:
         self_dict: CodingDict = super().dict(exclude={"code"}, by_alias=by_alias)
 
         if isinstance(self.code, Link):

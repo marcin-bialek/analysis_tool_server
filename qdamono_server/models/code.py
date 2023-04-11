@@ -20,7 +20,7 @@ class Code(Document):
     color: int
     parent: Link[Code] | None = Field(alias="parent_id")
 
-    def dict(self, by_alias: bool = True) -> CodeDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> CodeDict:
         self_dict: CodeDict = super().dict(exclude={"id", "parent"}, by_alias=by_alias)
 
         self_dict["_id"] = str(self.id)

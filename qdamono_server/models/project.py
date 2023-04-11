@@ -24,7 +24,7 @@ class Project(Document):
     notes: list[Link[Note]]
     text_files: list[Link[TextFile]]
 
-    def dict(self, by_alias: bool = True) -> ProjectDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> ProjectDict:
         self_dict: ProjectDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict

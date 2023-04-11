@@ -22,7 +22,7 @@ class TextFile(Document):
     text: str
     coding_versions: list[Link[CodingVersion]]
 
-    def dict(self, by_alias: bool = True) -> TextFileDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> TextFileDict:
         self_dict: TextFileDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict

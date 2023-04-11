@@ -31,7 +31,7 @@ class ProjectPrivilege(Document):
     user: Link[User] = Field(..., alias="user_id")
     project: Link[Project] = Field(..., alias="project_id")
 
-    def dict(self, by_alias: bool = True) -> ProjectPrivilegeDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> ProjectPrivilegeDict:
         self_dict: ProjectPrivilegeDict = super().dict(
             exclude={"id", "project", "user"}, by_alias=by_alias
         )

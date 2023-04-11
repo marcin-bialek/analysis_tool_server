@@ -18,7 +18,7 @@ class Note(Document):
     text: str
     text_lines: dict[str, list[int]] = dict()
 
-    def dict(self, by_alias: bool = True) -> NoteDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> NoteDict:
         self_dict: NoteDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict

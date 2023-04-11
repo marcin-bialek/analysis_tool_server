@@ -18,7 +18,7 @@ class CodingVersion(Document):
     name: str
     codings: list[Coding]
 
-    def dict(self, by_alias: bool = True) -> CodingVersionDict:
+    def dict(self, by_alias: bool = True, **kwargs) -> CodingVersionDict:
         self_dict: CodingVersionDict = super().dict(exclude={"id"}, by_alias=by_alias)
         self_dict["_id"] = str(self.id)
         return self_dict

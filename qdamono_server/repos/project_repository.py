@@ -68,8 +68,6 @@ class ProjectRepository:
     @classmethod
     async def get_project_list(cls, user: User):
         project_info_list: list[ProjectInfo] = []
-        # Querrying link IDs that are of UUID type is currently broken in beanie
-        privilege_list = await ProjectPrivilege.find_all().to_list()
 
         async for project in Project.find_all():
             # This does not work in current version of beanie:
@@ -78,8 +76,15 @@ class ProjectRepository:
             #     ProjectPrivilege.project.id == project.id,
             # )
 
+            privilege = await ProjectPrivilege.find_one(
+                {
+                    "user_id.$id": user.id,
+                    "project_id.$id": project.id,
+                }
+            )
+
             privilege_level = await cls.get_privilege_level(
-                project=project, user=user, privilege_list=privilege_list
+                project=project, privilege=privilege
             )
 
             if privilege_level >= ProjectPrivilegeLevel.GUEST:
@@ -95,22 +100,8 @@ class ProjectRepository:
     async def get_privilege_level(
         cls,
         project: Project,
-        user: User,
-        privilege_list: list[ProjectPrivilege] | None = None,
+        privilege: ProjectPrivilege,
     ):
-        if privilege_list is None:
-            logger.warn("Querrying all privileges")
-            privilege_list = await ProjectPrivilege.find_all().to_list()
-
-        privilege = next(
-            (
-                p
-                for p in privilege_list
-                if p.user.ref.id == user.id and p.project.ref.id == project.id
-            ),
-            None,
-        )
-
         privilege_level = (
             privilege.level
             if privilege is not None
